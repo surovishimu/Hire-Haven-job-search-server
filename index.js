@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
@@ -26,14 +26,38 @@ async function run() {
     try {
         await client.connect();
         const categoryCollection = client.db('jobSearch').collection('jobCategory');
+        const candidateCollection = client.db('candidateList').collection('candidates')
+        // post a job
+        app.post('/categories', async (req, res) => {
+            const categoryJob = req.body;
+            const result = await categoryCollection.insertOne(categoryJob);
+            console.log(result);
+            res.send(result);
+        })
 
+
+        // get all job
         app.get('/categories', async (req, res) => {
             const cursor = categoryCollection.find();
             const result = await cursor.toArray();
             res.send(result);
         })
+        // get a single job
 
+        app.get('/categories/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await categoryCollection.findOne(query);
+            res.send(result);
+        })
 
+        // post candidate list
+        app.post('/candidates', async (req, res) => {
+            const candidates = req.body;
+            const result = await candidateCollection.insertOne(candidates);
+            console.log(result);
+            res.send(result);
+        })
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
