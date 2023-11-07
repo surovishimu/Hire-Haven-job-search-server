@@ -38,7 +38,11 @@ async function run() {
 
         // get all job
         app.get('/categories', async (req, res) => {
-            const cursor = categoryCollection.find();
+            let query = {};
+            if (req.query?.email) {
+                query = { email: req.query.email }
+            }
+            const cursor = categoryCollection.find(query);
             const result = await cursor.toArray();
             res.send(result);
         })
@@ -49,6 +53,15 @@ async function run() {
             const query = { _id: new ObjectId(id) }
             const result = await categoryCollection.findOne(query);
             res.send(result);
+        })
+        // delete job
+        app.delete('/categories/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {
+                _id: new ObjectId(id),
+            }
+            const result = await categoryCollection.deleteOne(query);
+            res.send(result)
         })
 
         // post candidate list
