@@ -96,10 +96,21 @@ async function run() {
         // post candidate list
         app.post('/candidates', async (req, res) => {
             const candidates = req.body;
-            const result = await candidateCollection.insertOne(candidates);
-            console.log(result);
-            res.send(result);
-        })
+
+            try {
+
+                const jobId = new ObjectId(candidates.jobId);
+                await categoryCollection.updateOne(
+                    { _id: jobId },
+                    { $inc: { applicants: 1 } }
+                );
+                const result = await candidateCollection.insertOne(candidates);
+                res.send(result);
+            } catch (error) {
+                console.error('Error:', error);
+                res.status(500).send('Server error');
+            }
+        });
 
         // get candidate list 
         app.get('/candidates', async (req, res) => {
