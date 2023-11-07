@@ -64,6 +64,35 @@ async function run() {
             res.send(result)
         })
 
+        // update job
+
+        app.put('/categories/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const options = { upsert: true };
+            const updateJob = req.body;
+            const updatedJob = {
+                $set: {
+
+                    image: updateJob.image,
+                    title: updateJob.title,
+                    person_name: updateJob.person_name,
+                    category: updateJob.category,
+                    salary: updateJob.salary,
+                    postingDate: updateJob.postingDate,
+                    deadline: updateJob.deadline,
+                    description: updateJob.description,
+                    applicantNumber: updateJob.applicantNumber,
+                    skills: updateJob.skills,
+                    company_name: updateJob.company_name,
+                    location: updateJob.location
+                }
+            }
+            const result = await categoryCollection.updateOne(filter, updatedJob, options);
+            res.send(result)
+
+        })
+
         // post candidate list
         app.post('/candidates', async (req, res) => {
             const candidates = req.body;
