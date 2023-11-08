@@ -1,15 +1,24 @@
+
+require('dotenv').config()
 const express = require('express');
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-require('dotenv').config()
+
 const app = express();
 const port = process.env.PORT || 5000;
 
 // middleware
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin:
+        [
+            'http://localhost:5173',
+            'https://job-service-e1d6a.web.app',
+            'https://job-search-service.netlify.app'
+
+
+        ],
     credentials: true
 }));
 app.use(express.json());
@@ -30,8 +39,9 @@ const client = new MongoClient(uri, {
 
 // my created middleware
 
-const verifyToken = async (req, res, netx) => {
+const verifyToken = async (req, res, next) => {
     const token = req?.cookies?.token;
+
     console.log("value of token in middleware", token);
 
     if (!token) {
@@ -47,14 +57,14 @@ const verifyToken = async (req, res, netx) => {
 
         // console.log('value in the token', decoded);
         req.user = decoded;
-        netx()
+        next()
     })
 
 }
 
 async function run() {
     try {
-        await client.connect();
+        // await client.connect();
         const categoryCollection = client.db('jobSearch').collection('jobCategory');
         const candidateCollection = client.db('candidateList').collection('candidates')
         // auth related API
@@ -66,15 +76,20 @@ async function run() {
             res
                 .cookie('token', token, {
                     httpOnly: true,
-                    secure: false,
-                    // sameSite: 'none'
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
                 })
                 .send({ success: true })
         })
 
-
-
-
+        app.post('/logout', async (req, res) => {
+            const user = req.body;
+            console.log('login out', user);
+            res.clearCookie('token', {
+                maxAge: 0, secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+            }).send({ success: true })
+        })
         // post a job
         app.post('/categories', async (req, res) => {
             const categoryJob = req.body;
@@ -86,6 +101,11 @@ async function run() {
 
         // get all job
         app.get('/categories', async (req, res) => {
+            console.log('user in the valid token', req.user);
+            // if (req.query.email !== req.user.email) {
+            //     return res.status(403).send({ message: 'forbidden access' })
+            // }
+
             let query = {};
             if (req.query?.email) {
                 query = { email: req.query.email }
@@ -94,6 +114,9 @@ async function run() {
             const result = await cursor.toArray();
             res.send(result);
         })
+
+
+
         // get a single job
 
         app.get('/categories/:id', async (req, res) => {
@@ -175,7 +198,7 @@ async function run() {
 
 
 
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // await client.close();
